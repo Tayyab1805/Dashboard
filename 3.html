@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        /* Chart container - takes full viewport */
+        .chart-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        /* Navigation buttons */
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .nav-btn {
+            padding: 10px 20px;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            min-width: 80px;
+        }
+        
+        .nav-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .chart-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        /* Container for the iframe */
+        .iframe-container {
+            flex: 1;
+            width: 100%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            padding: 5px;
+        }
+        
+        /* The iframe itself */
+        #chartFrame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+        
+        /* Loading indicator */
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 40px;
+            font-size: 16px;
+            z-index: 1000;
+            display: none;
+        }
+        
+        /* Error message */
+        .error {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ff4444;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 40px;
+            font-size: 16px;
+            z-index: 1000;
+            display: none;
+        }
+        
+        /* Debug info */
+        .debug-info {
+            background: #f0f0f0;
+            padding: 5px 10px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            display: none; /* Set to 'block' to see debug info */
+        }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <button class="nav-btn" id="prevBtn" onclick="changeChart(-1)">← Previous</button>
+        <span class="chart-title" id="chartTitle">Chart 1 of 2</span>
+        <button class="nav-btn" id="nextBtn" onclick="changeChart(1)">Next →</button>
+    </div>
+    
+    <div class="chart-wrapper">
+        <div class="iframe-container" id="iframeContainer">
+            <iframe id="chartFrame" 
+                    src="about:blank"
+                    frameborder="0"
+                    scrolling="no">
+            </iframe>
+        </div>
+    </div>
+    
+    <div class="debug-info" id="debugInfo"></div>
+    <div class="loading" id="loading">Loading chart...</div>
+    <div class="error" id="error"></div>
+
+    <script>
+        // Chart URLs
+        const charts = [
+            {
+                title: 'Chart 1',
+                url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQkvV5SjwEw5Rx-rvXn5VxGr73RgbiF_FOL0jwa7M5mS9hc7KQWGnO4TkY0_Y9K8w/pubchart?oid=1734166825&format=interactive'
+            },
+            {
+                title: 'Chart 2',
+                url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQkvV5SjwEw5Rx-rvXn5VxGr73RgbiF_FOL0jwa7M5mS9hc7KQWGnO4TkY0_Y9K8w/pubchart?oid=433715317&format=interactive'
+            }
+        ];
+        
+        let currentIndex = 0;
+        const frame = document.getElementById('chartFrame');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const debugInfo = document.getElementById('debugInfo');
+        
+        // Function to fit chart perfectly
+        function fitChartToScreen() {
+            const container = document.getElementById('iframeContainer');
+            
+            // Get actual dimensions
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            
+            // Apply CSS to force iframe content to fit
+            frame.style.width = containerWidth + 'px';
+            frame.style.height = containerHeight + 'px';
+            
+            // Inject CSS into iframe once it's loaded
+            try {
+                const iframeDoc = frame.contentDocument || frame.contentWindow.document;
+                if (iframeDoc) {
+                    const style = iframeDoc.createElement('style');
+                    style.textContent = `
+                        /* Force all chart elements to fit */
+                        body, html { 
+                            margin: 0 !important; 
+                            padding: 0 !important;
+                            width: 100% !important;
+                            height: 100% !important;
+                            overflow: hidden !important;
+                        }
+                        
+                        /* Target Google Charts container */
+                        .google-visualization-orgchart-table,
+                        .google-visualization-table,
+                        svg, 
+                        .charts-html5 {
+                            width: 100% !important;
+                            height: 100% !important;
+                            max-width: 100% !important;
+                            max-height: 100% !important;
+                            object-fit: contain !important;
+                        }
+                        
+                        /* Target any chart container */
+                        div[style*="position: relative"] {
+                            width: 100% !important;
+                            height: 100% !important;
+                            overflow: hidden !important;
+                        }
+                    `;
+                    iframeDoc.head.appendChild(style);
+                    
+                    // Also try to resize any chart elements
+                    const charts = iframeDoc.querySelectorAll('svg, canvas, .google-visualization-orgchart-table');
+                    charts.forEach(chart => {
+                        chart.setAttribute('width', '100%');
+                        chart.setAttribute('height', '100%');
+                    });
+                }
+            } catch (e) {
+                // Cross-origin restrictions - can't modify iframe content
+                console.log('Cannot modify iframe content due to CORS');
+                debugInfo.textContent = 'CORS restricted: ' + e.message;
+            }
+            
+            // Debug info
+            debugInfo.innerHTML = `Container: ${containerWidth}x${containerHeight}<br>`;
+        }
+        
+        // Load chart
+        function loadChart(index) {
+            if (index < 0 || index >= charts.length) return;
+            
+            currentIndex = index;
+            const chart = charts[currentIndex];
+            
+            // Update UI
+            document.getElementById('chartTitle').textContent = `${chart.title} (${currentIndex + 1} of ${charts.length})`;
+            document.getElementById('prevBtn').disabled = currentIndex === 0;
+            document.getElementById('nextBtn').disabled = currentIndex === charts.length - 1;
+            
+            // Show loading
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            
+            // Load the chart
+            frame.src = chart.url;
+        }
+        
+        // Change chart (next/previous)
+        function changeChart(direction) {
+            const newIndex = currentIndex + direction;
+            if (newIndex >= 0 && newIndex < charts.length) {
+                loadChart(newIndex);
+            }
+        }
+        
+        // Handle iframe load
+        frame.onload = function() {
+            loading.style.display = 'none';
+            
+            // Wait a bit for chart to render, then fit
+            setTimeout(fitChartToScreen, 500);
+            setTimeout(fitChartToScreen, 1000);
+            setTimeout(fitChartToScreen, 2000);
+        };
+        
+        // Handle iframe error
+        frame.onerror = function() {
+            loading.style.display = 'none';
+            error.style.display = 'block';
+            error.textContent = 'Failed to load chart. Please check the URL.';
+        };
+        
+        // Handle window resize
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(fitChartToScreen, 100);
+        });
+        
+        // Initialize
+        window.onload = function() {
+            loadChart(0);
+        };
+        
+        // Additional fit attempts after everything loads
+        window.addEventListener('load', function() {
+            setTimeout(fitChartToScreen, 1500);
+            setTimeout(fitChartToScreen, 3000);
+        });
+    </script>
+</body>
+</html>

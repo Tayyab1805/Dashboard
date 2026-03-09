@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: white;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .swipe-container {
+            width: 100%;
+            height: 100vh;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x mandatory;
+            display: flex;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        }
+        
+        .chart-page {
+            flex: 0 0 100%;
+            height: 100vh;
+            scroll-snap-align: start;
+            position: relative;
+            padding: 10px;
+        }
+        
+        .chart-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 90%; /* Leave some margin */
+            border: none;
+            transform: scale(0.95);
+            transform-origin: center center;
+        }
+        
+        /* Page indicators */
+        .indicators {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            z-index: 1000;
+        }
+        
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.3);
+            transition: all 0.3s;
+        }
+        
+        .dot.active {
+            background: #000;
+            width: 20px;
+            border-radius: 10px;
+        }
+        
+        /* Optional chart titles */
+        .chart-title {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            color: #666;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div class="swipe-container" id="swipeContainer">
+        <div class="chart-page">
+            <div class="chart-title">Chart 1</div>
+            <div class="chart-wrapper">
+                <iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vQkvV5SjwEw5Rx-rvXn5VxGr73RgbiF_FOL0jwa7M5mS9hc7KQWGnO4TkY0_Y9K8w/pubchart?oid=1734166825&format=interactive"></iframe>
+            </div>
+        </div>
+        <div class="chart-page">
+            <div class="chart-title">Chart 2</div>
+            <div class="chart-wrapper">
+                <iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vQkvV5SjwEw5Rx-rvXn5VxGr73RgbiF_FOL0jwa7M5mS9hc7KQWGnO4TkY0_Y9K8w/pubchart?oid=433715317&format=interactive"></iframe>
+            </div>
+        </div>
+    </div>
+    
+    <div class="indicators" id="indicators">
+        <span class="dot active"></span>
+        <span class="dot"></span>
+    </div>
+
+    <script>
+        const container = document.getElementById('swipeContainer');
+        const dots = document.querySelectorAll('.dot');
+        
+        container.addEventListener('scroll', () => {
+            const scrollPosition = container.scrollLeft;
+            const pageWidth = container.offsetWidth;
+            const currentPage = Math.round(scrollPosition / pageWidth);
+            
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentPage);
+            });
+        });
+    </script>
+</body>
+</html>

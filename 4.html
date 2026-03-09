@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .nav-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+        }
+        
+        button {
+            padding: 12px 24px;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .chart-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            padding: 10px;
+        }
+        
+        img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .note {
+            text-align: center;
+            padding: 10px;
+            background: #fff3cd;
+            color: #856404;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav-bar">
+        <button id="prevBtn" onclick="changeImage(-1)" disabled>← Previous</button>
+        <span id="counter">Image 1 of 2</span>
+        <button id="nextBtn" onclick="changeImage(1)">Next →</button>
+    </div>
+    
+    <div class="chart-container">
+        <img id="chartImage" src="" alt="Chart">
+    </div>
+    
+    <div class="note">
+        ⚠️ Note: You'll need to manually save the charts as images first<br>
+        or use a service to convert Google Charts to images
+    </div>
+
+    <script>
+        // For this to work, you need to:
+        // 1. Open each chart URL
+        // 2. Take a screenshot
+        // 3. Save the images in the same folder as this HTML
+        // 4. Update the image names below
+        
+        const images = [
+            'chart1.png',  // Replace with your actual image files
+            'chart2.png'   // Replace with your actual image files
+        ];
+        
+        let currentIndex = 0;
+        
+        function loadImage(index) {
+            if (index < 0 || index >= images.length) return;
+            
+            currentIndex = index;
+            document.getElementById('chartImage').src = images[currentIndex];
+            document.getElementById('counter').textContent = `Chart ${currentIndex + 1} of ${images.length}`;
+            
+            document.getElementById('prevBtn').disabled = currentIndex === 0;
+            document.getElementById('nextBtn').disabled = currentIndex === images.length - 1;
+        }
+        
+        function changeImage(direction) {
+            loadImage(currentIndex + direction);
+        }
+        
+        loadImage(0);
+    </script>
+</body>
+</html>
