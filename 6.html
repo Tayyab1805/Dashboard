@@ -1,78 +1,569 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Google Sheets Chart Display</title>
-        <style>
-        body {
-            font-family: Arial, sans-serif;
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>📊 Interactive Chart Dashboard</title>
+    <style>
+        * {
             margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
         }
-        .chart-container {
-            background-color: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            max-width: 100%;
-            overflow-x: auto;
-        }
-        .chart-title {
-            text-align: center;
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 24px;
-        }
-        iframe {
-            display: block;
+
+        .dashboard {
+            width: 100%;
+            max-width: 1200px;
             margin: 0 auto;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            max-width: 100%;
         }
-        @media (max-width: 650px) {
-            iframe {
+
+        .chart-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .chart-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            padding: 24px 24px 16px 24px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .title-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .title-icon {
+            font-size: 32px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .title-text h1 {
+            font-size: clamp(20px, 5vw, 28px);
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px;
+        }
+
+        .title-text p {
+            color: #666;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .last-update {
+            background: white;
+            padding: 8px 16px;
+            border-radius: 100px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #555;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .update-dot {
+            width: 8px;
+            height: 8px;
+            background: #4CAF50;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+        }
+
+        .chart-container {
+            position: relative;
+            width: 100%;
+            padding: 20px;
+            background: white;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 16px;
+            background: #fafafa;
+            padding: 10px 0;
+        }
+
+        .chart-wrapper iframe {
+            display: block;
+            min-width: 600px;
+            width: 100%;
+            height: 371px;
+            border: none;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Custom scrollbar */
+        .chart-wrapper::-webkit-scrollbar {
+            height: 8px;
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .chart-wrapper::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 10px;
+        }
+
+        .chart-wrapper::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .mobile-scroll-hint {
+            display: none;
+            text-align: center;
+            padding: 12px;
+            background: #e8f4fd;
+            color: #0288d1;
+            font-size: 14px;
+            border-radius: 12px;
+            margin: 16px 0 0 0;
+        }
+
+        .mobile-scroll-hint i {
+            animation: slide 1.5s infinite;
+            display: inline-block;
+        }
+
+        @keyframes slide {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(5px); }
+            100% { transform: translateX(0); }
+        }
+
+        .chart-footer {
+            padding: 20px 24px 24px 24px;
+            background: #f8f9fa;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .stats-container {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stats {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-info h3 {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .stat-info p {
+            font-size: 18px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            background: white;
+            color: #667eea;
+            border: 1px solid #667eea;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            body {
+                padding: 8px;
+            }
+
+            .card-header {
+                padding: 16px;
+            }
+
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .last-update {
                 width: 100%;
-                height: auto;
-                min-height: 300px;
+                justify-content: center;
+            }
+
+            .chart-container {
+                padding: 12px;
+            }
+
+            .chart-wrapper iframe {
+                min-width: 500px;
+            }
+
+            .mobile-scroll-hint {
+                display: block;
+            }
+
+            .stats-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .stats {
+                justify-content: space-around;
+            }
+
+            .action-buttons {
+                justify-content: stretch;
+            }
+
+            .btn {
+                flex: 1;
+                justify-content: center;
             }
         }
+
+        @media (max-width: 480px) {
+            .chart-wrapper iframe {
+                min-width: 450px;
+            }
+
+            .stat-item {
+                flex: 1 1 calc(50% - 12px);
+                min-width: 120px;
+            }
+
+            .title-section {
+                width: 100%;
+            }
+
+            .title-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 24px;
+            }
+        }
+
+        /* Loading animation */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .chart-container.loading .loading-overlay {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 5px 10px;
+            border-radius: 6px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
-    </head>
-    <body>
-        <div class="chart-container">
-            <h1 class="chart-title">Google Sheets Chart</h1>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="chart-card">
+            <div class="card-header">
+                <div class="header-content">
+                    <div class="title-section">
+                        <div class="title-icon">
+                            📈
+                        </div>
+                        <div class="title-text">
+                            <h1>Analytics Dashboard</h1>
+                            <p>
+                                <span>🔄 Live data from Google Sheets</span>
+                                <span class="tooltip">
+                                    ⓘ
+                                    <span class="tooltip-text">Chart updates automatically when source changes</span>
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="last-update">
+                        <span class="update-dot"></span>
+                        <span>Updated just now</span>
+                    </div>
+                </div>
+            </div>
 
-            <!-- Google Sheets Chart iframe -->
-            <iframe
-                width="600"
-                height="371"
-                seamless
-                frameborder="0"
-                scrolling="no"
-                src="https://docs.google.com/spreadsheets/d/e/2PACX-1vQkvV5SjwEw5Rx-rvXn5VxGr73RgbiF_FOL0jwa7M5mS9hc7KQWGnO4TkY0_Y9K8w/pubchart?oid=433715317&format=interactive">
-            </iframe>
+            <div class="chart-container" id="chartContainer">
+                <div class="mobile-scroll-hint">
+                    <i>👉</i> Swipe horizontally to see full chart <i>👈</i>
+                </div>
+                <div class="chart-wrapper">
+                    <iframe 
+                        title="Google Sheets Chart"
+                        src="https://docs.google.com/spreadsheets/d/e/2PACX-1vQkvV5SjwEw5Rx-rvXn5VxGr73RgbiF_FOL0jwa7M5mS9hc7KQWGnO4TkY0_Y9K8w/pubchart?oid=433715317&format=interactive"
+                        loading="lazy">
+                    </iframe>
+
+                   
+                </div>
 
 
-            <iframe
-                width="600"
-                height="371"
-                seamless
-                frameborder="0"
-                scrolling="no"
-                src="https://docs.google.com/spreadsheets/d/e/2PACX-1vQkvV5SjwEw5Rx-rvXn5VxGr73RgbiF_FOL0jwa7M5mS9hc7KQWGnO4TkY0_Y9K8w/pubchart?oid=1734166825&format=interactive">
-            </iframe>
 
-            <p style="text-align: center; color: #666; margin-top: 15px;">
-                Source: Google Sheets | Chart updates automatically when source
-                data changes
-            </p>
+
+
+                <div class="loading-overlay">
+                    <div class="loader"></div>
+                </div>
+            </>
+
+            <div class="chart-footer">
+                <div class="stats-container">
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-icon">
+                                📊
+                            </div>
+                            <div class="stat-info">
+                                <h3>Chart Type</h3>
+                                <p>Interactive</p>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-icon">
+                                🔄
+                            </div>
+                            <div class="stat-info">
+                                <h3>Auto-refresh</h3>
+                                <p>Real-time</p>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-icon">
+                                📱
+                            </div>
+                            <div class="stat-info">
+                                <h3>Mobile</h3>
+                                <p>Swipe to scroll</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn" onclick="window.location.reload()">
+                            🔄 Refresh
+                        </button>
+                        <button class="btn btn-primary" onclick="openFullScreen()">
+                            ⛶ Full Screen
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-    </body>
+    </div>
+
+    <script>
+        // Simulate loading (remove after actual load)
+        window.addEventListener('load', function() {
+            const container = document.getElementById('chartContainer');
+            container.classList.add('loading');
+            
+            setTimeout(() => {
+                container.classList.remove('loading');
+            }, 1000);
+        });
+
+        // Full screen function
+        function openFullScreen() {
+            const iframe = document.querySelector('iframe');
+            if (iframe.requestFullscreen) {
+                iframe.requestFullscreen();
+            } else if (iframe.webkitRequestFullscreen) { /* Safari */
+                iframe.webkitRequestFullscreen();
+            } else if (iframe.msRequestFullscreen) { /* IE11 */
+                iframe.msRequestFullscreen();
+            }
+        }
+
+        // Update timestamp
+        function updateTimestamp() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true 
+            });
+            document.querySelector('.last-update span:last-child').textContent = `Updated at ${timeString}`;
+        }
+
+        // Update timestamp every minute
+        updateTimestamp();
+        setInterval(updateTimestamp, 60000);
+
+        // Add touch feedback for mobile
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('touchstart', function() {
+                this.style.opacity = '0.8';
+            });
+            btn.addEventListener('touchend', function() {
+                this.style.opacity = '1';
+            });
+        });
+
+        // Detect if user is on mobile and show appropriate hint
+        if (window.innerWidth <= 768) {
+            const hint = document.querySelector('.mobile-scroll-hint');
+            hint.style.display = 'block';
+            
+            // Hide hint after user scrolls
+            const chartWrapper = document.querySelector('.chart-wrapper');
+            chartWrapper.addEventListener('scroll', function() {
+                hint.style.opacity = '0';
+                setTimeout(() => {
+                    hint.style.display = 'none';
+                }, 300);
+            });
+        }
+    </script>
+</body>
 </html>

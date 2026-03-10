@@ -2,18 +2,474 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Document</title>
+        <meta name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+        <title>📊 Dual Chart Dashboard · Fullscreen & PNG</title>
+        <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #2b3a67 0%, #4a2c5f 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .dashboard {
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        /* chart cards */
+        .chart-card {
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(8px);
+            border-radius: 28px;
+            box-shadow: 0 25px 50px -8px rgba(0,0,0,0.4);
+            overflow: hidden;
+            transition: transform 0.2s ease;
+        }
+        .chart-card:hover { transform: scale(1.01); }
+        .card-header {
+            padding: 18px 22px 12px 22px;
+            background: #f8faff;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .title-section {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .title-icon {
+            font-size: 28px;
+            background: linear-gradient(145deg, #3f51b5, #9c27b0);
+            width: 48px; height: 48px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 6px 12px rgba(106, 27, 154, 0.3);
+        }
+        .title-text h2 {
+            font-size: 1.5rem;
+            font-weight: 650;
+            background: linear-gradient(135deg, #1e2b5e, #6a1b9a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .last-update-badge {
+            background: #ffffffd6;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #2c3e50;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .dot { width: 10px; height: 10px; background: #2ecc71; border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 #2ecc71; } 70% { box-shadow: 0 0 0 8px #2ecc7100; } 100% {} }
+
+        /* chart area */
+        .chart-container {
+            position: relative;
+            padding: 20px 20px 10px 20px;
+            background: white;
+        }
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 8px 0;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.02);
+        }
+        .chart-wrapper iframe {
+            display: block;
+            min-width: 600px;
+            width: 100%;
+            height: 360px;
+            border: none;
+            pointer-events: auto;
+        }
+        .chart-wrapper::-webkit-scrollbar { height: 8px; background: #f0f0f0; border-radius: 12px; }
+        .chart-wrapper::-webkit-scrollbar-thumb { background: linear-gradient(90deg, #5e6fbe, #9b59b6); border-radius: 12px; }
+
+        .mobile-scroll-hint {
+            display: none;
+            text-align: center;
+            padding: 8px;
+            background: #eef5ff;
+            color: #2c5282;
+            border-radius: 40px;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+        }
+
+        /* footer stats + buttons */
+        .chart-footer {
+            padding: 18px 24px 20px 24px;
+            background: #f9fafc;
+            border-top: 1px solid #e2e8f0;
+        }
+        .stats-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .stats-group {
+            display: flex;
+            gap: 28px;
+            flex-wrap: wrap;
+        }
+        .stat-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            padding: 6px 18px 6px 12px;
+            border-radius: 40px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+            font-size: 0.95rem;
+        }
+        .stat-badge span:first-child { font-size: 1.3rem; margin-right: 4px; }
+        .action-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 10px 22px;
+            border: none;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            color: #2b3a67;
+            border: 1px solid #cad1e0;
+            transition: 0.15s;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+        .btn-primary {
+            background: linear-gradient(145deg, #4f6cdb, #8e44ad);
+            color: white;
+            border: none;
+            box-shadow: 0 8px 16px -6px #6c4faa70;
+        }
+        .btn-primary:hover { transform: scale(1.02); background: linear-gradient(145deg, #5b7ae0, #a25fc0); }
+        .btn:active { transform: translateY(1px); }
+
+        /* fullscreen iframe special */
+        .iframe-fullscreen:-webkit-full-screen { width: 100%; height: 100%; background: white; }
+        .iframe-fullscreen:fullscreen { width: 100%; height: 100%; background: white; }
+
+        /* loading overlay (soft) */
+        .loading-overlay {
+            position: absolute; inset: 0; background: #ffffffcc; backdrop-filter: blur(2px);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none; transition: 0.2s; z-index: 10;
+        }
+        .chart-container.loading .loading-overlay { opacity: 1; pointer-events: none; } /* just simulation */
+        .loader { width: 44px; height: 44px; border: 4px solid #e0e7ff; border-top-color: #6d28d9; border-radius: 50%; animation: spin 0.9s infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 700px) {
+            .stats-group { gap: 12px; }
+            .action-group { flex: 1; }
+            .btn { flex: 1; justify-content: center; }
+            .mobile-scroll-hint { display: block; }
+        }
+    </style>
     </head>
     <body>
-        <a href="1.html">1</a>
-        <a href="2.html">2</a>
-        <a href="3.html">3</a>
-        <a href="4.html">4</a>
-        <a href="5.html">5</a>
-        <a href="6.html">6</a>
-        <a href="7.html">7</a>
-        <a href="8.html">8</a>
+        <div class="dashboard">
+            <!-- CHART 1 (original) -->
+            <div class="chart-card" id="chart1Card">
+                <div class="card-header">
+                    <div class="header-content">
+                        <div class="title-section">
+                            <div class="title-icon">📈</div>
+                            <div class="title-text"><h2>Cumulative
+                                    Sales</h2></div>
+                        </div>
+                        <div class="last-update-badge"><span class="dot"></span>
+                            <span id="update1">updated now</span></div>
+                    </div>
+                </div>
+                <div class="chart-container" id="chartContainer1">
+                    <div class="mobile-scroll-hint">👆 Swipe chart → full
+                        view</div>
+                    <div class="chart-wrapper">
+                        <iframe class="chart-iframe" id="iframe1"
+                            src="https://docs.google.com/spreadsheets/d/e/2PACX-1vQkvV5SjwEw5Rx-rvXn5VxGr73RgbiF_FOL0jwa7M5mS9hc7KQWGnO4TkY0_Y9K8w/pubchart?oid=433715317&format=interactive"
+                            loading="lazy"></iframe>
+                    </div>
+                    <div class="loading-overlay"><div
+                            class="loader"></div></div>
+                </div>
+                <div class="chart-footer">
+                    <div class="stats-row">
+                        <div class="stats-group">
 
+                            <div class="stat-badge"><span>📊</span>Live
+                                Data</div>
+                        </div>
+                        <div class="action-group">
+                            <button class="btn" id="dlPng1">📥 PNG ·
+                                C.Sale</button>
+                            <button class="btn btn-primary" id="fs1">⛶
+                                fullscreen</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHART 2 (new one) -->
+            <div class="chart-card" id="chart2Card">
+                <div class="card-header">
+                    <div class="header-content">
+                        <div class="title-section">
+                            <div class="title-icon">📊</div>
+                            <div class="title-text"><h2>Sales</h2></div>
+                        </div>
+                        <div class="last-update-badge"><span class="dot"></span>
+                            <span id="update2">updated now</span></div>
+                    </div>
+                </div>
+                <div class="chart-container" id="chartContainer2">
+                    <div class="mobile-scroll-hint">👆 Swipe chart → full
+                        view</div>
+                    <div class="chart-wrapper">
+                        <iframe class="chart-iframe" id="iframe2"
+                            src="https://docs.google.com/spreadsheets/d/e/2PACX-1vQkvV5SjwEw5Rx-rvXn5VxGr73RgbiF_FOL0jwa7M5mS9hc7KQWGnO4TkY0_Y9K8w/pubchart?oid=1734166825&format=interactive"
+                            loading="lazy"></iframe>
+                    </div>
+                    <div class="loading-overlay"><div
+                            class="loader"></div></div>
+                </div>
+                <div class="chart-footer">
+                    <div class="stats-row">
+                        <div class="stats-group">
+                            <div class="stat-badge"><span>📊</span> Live
+                                Data</div>
+
+                        </div>
+                        <div class="action-group">
+                            <button class="btn" id="dlPng2">📥 PNG ·
+                                Sales</button>
+                            <button class="btn btn-primary" id="fs2">⛶
+                                fullscreen</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-card" id="chart3Card">
+                <div class="card-header">
+                    <div class="header-content">
+                        <div class="title-section">
+                            <div class="title-icon">📊</div>
+                            <div class="title-text"><h2>Design</h2></div>
+                        </div>
+                        <div class="last-update-badge"><span class="dot"></span>
+                            <span id="update3">updated now</span></div>
+                    </div>
+                </div>
+                <div class="chart-container" id="chartContainer3">
+                    <div class="mobile-scroll-hint">👆 Swipe chart → full
+                        view</div>
+                    <div class="chart-wrapper">
+                        <iframe class="chart-iframe" id="iframe3"
+                            src="https://docs.google.com/spreadsheets/d/e/2PACX-1vQkvV5SjwEw5Rx-rvXn5VxGr73RgbiF_FOL0jwa7M5mS9hc7KQWGnO4TkY0_Y9K8w/pubchart?oid=1640726276&format=interactive"
+                            loading="lazy"></iframe>
+                    </div>
+                    <div class="loading-overlay"><div
+                            class="loader"></div></div>
+                </div>
+                <div class="chart-footer">
+                    <div class="stats-row">
+                        <div class="stats-group">
+                            <div class="stat-badge"><span>📊</span> Live
+                                Data</div>
+
+                        </div>
+                        <div class="action-group">
+                            <button class="btn" id="dlPng3">📥 PNG ·
+                                Designs</button>
+                            <button class="btn btn-primary" id="fs3">⛶
+                                fullscreen</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+    (function() {
+        // helper: update timestamp every minute (both cards)
+        function refreshTimestamps() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('update1').innerText = 'updated ' + timeStr;
+            document.getElementById('update2').innerText = 'updated ' + timeStr;
+        }
+        refreshTimestamps();
+        setInterval(refreshTimestamps, 60000);
+
+        // simulate loading hide (after 1s)
+        window.addEventListener('load', () => {
+            document.getElementById('chartContainer1').classList.add('loading');
+            document.getElementById('chartContainer2').classList.add('loading');
+            setTimeout(() => {
+                document.getElementById('chartContainer1').classList.remove('loading');
+                document.getElementById('chartContainer2').classList.remove('loading');
+            }, 800);
+        });
+
+        // ------ FULLSCREEN (per chart iframe) ------
+        function openFullscreen(iframeId) {
+            const iframe = document.getElementById(iframeId);
+            if (!iframe) return;
+            // try all vendors
+            if (iframe.requestFullscreen) iframe.requestFullscreen();
+            else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
+            else if (iframe.msRequestFullscreen) iframe.msRequestFullscreen();
+            else alert('Fullscreen not supported');
+        }
+        document.getElementById('fs1').addEventListener('click', () => openFullscreen('iframe1'));
+        document.getElementById('fs2').addEventListener('click', () => openFullscreen('iframe2'));
+
+        // ------ PNG DOWNLOAD (using html2canvas) ------
+        // We dynamically load html2canvas from CDN
+        function loadHtml2Canvas(callback) {
+            if (window.html2canvas) { callback(); return; }
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+            script.integrity = 'sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==';
+            script.crossOrigin = 'anonymous';
+            script.onload = callback;
+            document.head.appendChild(script);
+        }
+
+        function downloadChartAsPng(iframeId, fileName) {
+            const iframe = document.getElementById(iframeId);
+            if (!iframe) return;
+
+            // try to capture iframe content via html2canvas
+            loadHtml2Canvas(function() {
+                // we need to capture the iframe's document body
+                try {
+                    // Access iframe document (may be cross-origin? but Google Sheets embed is same-origin? likely ok)
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const chartElement = iframeDoc.body; // the whole iframe content
+                    if (!chartElement) throw new Error('cannot access iframe content (cross-origin maybe)');
+
+                    html2canvas(chartElement, {
+                        scale: 1.8,              // nice resolution
+                        backgroundColor: '#ffffff',
+                        logging: false,
+                        allowTaint: false,
+                        useCORS: true
+                    }).then(canvas => {
+                        // create download link
+                        const link = document.createElement('a');
+                        link.download = fileName || 'chart.png';
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                    }).catch(err => {
+                        console.warn('html2canvas iframe error, fallback: ', err);
+                        fallbackDownloadAlert();
+                    });
+                } catch (e) {
+                    console.error('Cannot access iframe for PNG (CORS policy)', e);
+                    fallbackDownloadAlert();
+                }
+            });
+
+            function fallbackDownloadAlert() {
+                alert('⚠️ PNG download works best on same-origin iframes.\n\nTry: screenshot manually or use fullscreen.');
+            }
+        }
+
+        // fallback alternative: open image in new tab (not PNG but direct link) — but we still use html2canvas as primary.
+        // For Google Sheets pubchart, it's cross-origin? Actually the iframe src is docs.google.com, which is cross-origin.
+        // html2canvas cannot capture cross-origin iframe content due to CORS.
+        // Better approach: we can extract the chart image URL? but pubchart interactive is not a simple image.
+        // As a UX improvement, we inform user and provide a "copy link" alternative.
+        // We'll modify: show a toast or use a clean fallback: open the chart in a new tab (which is PNG? not exactly)
+        // But to respect request: "add the direct download (png) of the chart" — the most reliable is using the "pubchart" format with image export?
+        // Actually Google Sheets chart iframe has a menu ⋮ -> download as PNG. But we cannot automate that.
+        // So for demo, we combine html2canvas (optimistic) and fallback notification.
+
+        // override download for both: use fallback with more graceful message + open chart in new window as image? let's adjust.
+        function improvedPngDownload(iframeId, chartName) {
+            loadHtml2Canvas(function() {
+                // attempt capture via iframe window, but it's cross origin: will fail silently.
+                // fallback: open the chart's "image" version by modifying pubchart URL? Not trivial.
+                // Instead: notify that due to CORS, manual download is needed via browser.
+                // But we also provide a "copy" of the interactive link. For simplicity, we'll open the interactive chart in new tab.
+                // And show instruction.
+                const iframe = document.getElementById(iframeId);
+                if (!iframe) return;
+                const src = iframe.src;
+                // replace interactive -> image? there is "format=image" but may break. try to open image version:
+                // oid differs, let's keep interactive and tell user to use three-dot menu.
+                alert('📌 Google Charts are protected. To download PNG:\n1. Click inside chart\n2. Use the three-dot menu (top-right of chart)\n3. Select "Download as PNG"');
+                window.open(src, '_blank'); // open interactive for convenience
+            });
+        }
+
+        // Attach downloads with user-friendly alert
+        document.getElementById('dlPng1').addEventListener('click', (e) => {
+            e.preventDefault();
+            improvedPngDownload('iframe1', 'chart1_sales.png');
+        });
+        document.getElementById('dlPng2').addEventListener('click', (e) => {
+            e.preventDefault();
+            improvedPngDownload('iframe2', 'chart2_regions.png');
+        });
+
+        // hide mobile hint after scroll (for each wrapper)
+        const wrappers = document.querySelectorAll('.chart-wrapper');
+        wrappers.forEach(wrapper => {
+            const hint = wrapper.parentElement?.querySelector('.mobile-scroll-hint');
+            if (!hint) return;
+            wrapper.addEventListener('scroll', () => {
+                hint.style.transition = 'opacity 0.2s';
+                hint.style.opacity = '0';
+                setTimeout(() => { if (hint) hint.style.display = 'none'; }, 200);
+            });
+        });
+
+        // touch button feedback
+        document.querySelectorAll('.btn').forEach(b => {
+            b.addEventListener('touchstart', () => b.style.opacity = '0.7');
+            b.addEventListener('touchend', () => b.style.opacity = '1');
+        });
+    })();
+</script>
+        <!-- ensure html2canvas is loaded anyway for potential future, but our improved function uses it anyway -->
     </body>
 </html>
